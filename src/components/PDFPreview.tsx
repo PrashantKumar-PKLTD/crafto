@@ -11,11 +11,16 @@ interface Product {
 }
 
 interface PDFPreviewProps {
-  product: Product;
-  onClose: () => void;
+  product?: Product;
+  onClose?: () => void;
 }
 
 const PDFPreview: React.FC<PDFPreviewProps> = ({ product, onClose }) => {
+  // Return null if product is not provided
+  if (!product || !onClose) {
+    return null;
+  }
+
   const [email, setEmail] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
