@@ -33,6 +33,9 @@ router.post('/send-payment-email', [
 
     const { email, productId, productTitle, productPrice, productImage } = req.body;
 
+    // Generate download token for the email
+    const downloadToken = uuidv4();
+
     // Generate UPI QR code for email
     const upiString = `upi://pay?pa=${process.env.UPI_ID || 'pianolearn@upi'}&pn=${encodeURIComponent(process.env.UPI_MERCHANT_NAME || 'PianoLearn')}&am=${productPrice}&cu=INR&tn=${encodeURIComponent(`Payment for ${productTitle}`)}`;
     const qrCodeDataUrl = await QRCode.toDataURL(upiString, {
