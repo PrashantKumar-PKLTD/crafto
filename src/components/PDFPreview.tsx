@@ -142,12 +142,13 @@ const PDFPreview: React.FC = () => {
       const result = await res.json();
       if (result?.success) {
         setIsSuccess(true);
+        setTimeout(() => closeModal(), 3000);
       } else {
         alert("Failed to send email. Please try again.");
       }
     } catch (err) {
       console.error("Email sending error:", err);
-      setIsSuccess(true);
+      alert("Failed to send email. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -516,7 +517,7 @@ const PDFPreview: React.FC = () => {
                       />
                     </div>
                     <p className="text-xs text-gray-500 mb-4">
-                      After UPI payment, we'll send your download link to this email.
+                      We'll send you an email with the UPI QR code and payment instructions.
                     </p>
 
                     <button
@@ -527,12 +528,12 @@ const PDFPreview: React.FC = () => {
                       {isSubmitting ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Opening UPI Payment...</span>
+                          <span>Sending Payment Email...</span>
                         </>
                       ) : (
                         <>
-                          <QrCode className="w-5 h-5" />
-                          <span>Continue to UPI Payment</span>
+                          <Mail className="w-5 h-5" />
+                          <span>Send UPI Payment Email</span>
                         </>
                       )}
                     </button>
@@ -540,7 +541,7 @@ const PDFPreview: React.FC = () => {
 
                   <div className="mt-4 p-3 bg-green-50 rounded-xl">
                     <p className="text-xs text-green-700 text-center">
-                      🔒 Secure UPI payment • Instant download after payment
+                      📧 You'll receive an email with UPI QR code for instant payment
                     </p>
                   </div>
                 </>
@@ -549,16 +550,16 @@ const PDFPreview: React.FC = () => {
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Check className="w-8 h-8 text-green-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Purchase Successful!</h3>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Email Sent Successfully!</h3>
                   <p className="text-gray-600 mb-4">
-                    Thank you for your UPI payment! We've sent your download link to <strong>{email}</strong>
+                    We've sent the UPI payment QR code to <strong>{email}</strong>
                   </p>
                   <p className="text-sm text-gray-500 mb-4">
-                    Check your inbox for the PDF download link and receipt.
+                    Check your inbox for the payment instructions and QR code.
                   </p>
                   <div className="p-3 bg-blue-50 rounded-xl">
                     <p className="text-xs text-blue-700">
-                      💡 Tip: Check your spam folder if you don't see the email within 5 minutes
+                      💡 Scan the QR code in the email to complete your UPI payment
                     </p>
                   </div>
                 </div>

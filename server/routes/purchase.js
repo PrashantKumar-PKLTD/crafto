@@ -33,112 +33,132 @@ router.post('/send-payment-email', [
 
     const { email, productId, productTitle, productPrice, productImage } = req.body;
 
+    // Generate UPI QR code for email
+    const upiString = `upi://pay?pa=${process.env.UPI_ID || 'pianolearn@upi'}&pn=${encodeURIComponent(process.env.UPI_MERCHANT_NAME || 'PianoLearn')}&am=${productPrice}&cu=INR&tn=${encodeURIComponent(`Payment for ${productTitle}`)}`;
+    const qrCodeDataUrl = await QRCode.toDataURL(upiString, {
+      width: 300,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+
     // Create payment email content
     const paymentEmailContent = `
       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f8f9fa;">
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #00c851 0%, #007e33 100%); padding: 40px 20px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">🎹 UPI Payment Required</h1>
+          <h1 style="color: white; margin: 0; font-size: 28px;">🎹 Complete Your Purchase</h1>
           <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">
-            Use the website to complete your UPI payment
+            Scan the QR code below to pay with UPI
           </p>
         </div>
         
         <!-- Product Info -->
         <div style="padding: 30px 20px; background: white; border-bottom: 1px solid #e9ecef;">
-          <div style="display: flex; align-items: center; gap: 20px;">
+          <div style="text-align: center;">
             <img src="${productImage || 'https://images.pexels.com/photos/164743/pexels-photo-164743.jpeg?auto=compress&cs=tinysrgb&w=200'}" 
-                 style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px;" 
+                 style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px; margin-bottom: 20px;" 
                  alt="${productTitle}">
-            <div>
-              <h2 style="color: #333; margin: 0 0 8px 0; font-size: 20px;">${productTitle}</h2>
-              <p style="color: #666; margin: 0 0 8px 0; font-size: 14px;">Digital PDF Download</p>
-              <p style="color: #00c851; margin: 0; font-size: 24px; font-weight: bold;">₹${productPrice}</p>
-            </div>
+            <h2 style="color: #333; margin: 0 0 8px 0; font-size: 24px;">${productTitle}</h2>
+            <p style="color: #666; margin: 0 0 8px 0; font-size: 16px;">Digital PDF Download</p>
+            <p style="color: #00c851; margin: 0; font-size: 32px; font-weight: bold;">₹${productPrice}</p>
           </div>
         </div>
         
-        <!-- Payment Instructions -->
-        <div style="padding: 40px 20px; background: white;">
-          <h3 style="color: #333; margin-bottom: 25px; text-align: center;">📱 UPI Payment Instructions</h3>
+        <!-- QR Code Payment Section -->
+        <div style="padding: 40px 20px; background: white; text-align: center;">
+          <h3 style="color: #333; margin-bottom: 25px; font-size: 24px;">📱 Scan QR Code to Pay</h3>
           
-          <!-- Step 1: Go to Website -->
+          <!-- QR Code -->
           <div style="margin-bottom: 30px;">
-            <div style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); 
-                        color: white; padding: 20px; border-radius: 12px; 
-                        text-align: center; font-weight: bold; font-size: 16px;">
-              🌐 Step 1: Go to Website
-              <div style="font-size: 14px; opacity: 0.9; margin-top: 8px;">
-                Visit our website and click "Pay with UPI" to get QR code
-              </div>
-              <div style="margin-top: 15px;">
-                <a href="${process.env.CORS_ORIGIN || 'http://localhost:5173'}" 
-                   style="background: rgba(255,255,255,0.2); color: white; padding: 12px 24px; 
-                          text-decoration: none; border-radius: 8px; font-size: 14px; 
-                          display: inline-block; border: 1px solid rgba(255,255,255,0.3);">
-                  🔗 Open PianoLearn Website
-                </a>
-              </div>
+            <div style="display: inline-block; padding: 20px; background: white; border: 3px solid #00c851; border-radius: 20px; box-shadow: 0 8px 25px rgba(0, 200, 81, 0.2);">
+              <img src="${qrCodeDataUrl}" 
+                   alt="UPI Payment QR Code" 
+                   style="width: 250px; height: 250px; display: block;">
+            </div>
+            <p style="color: #00c851; margin: 15px 0 0 0; font-size: 18px; font-weight: bold;">
+              Amount: ₹${productPrice}
+            </p>
+            <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
+              Reference: ${productTitle.substring(0, 25)}...
+            </p>
+          </div>
+          
+          <!-- UPI Apps -->
+          <div style="margin-bottom: 30px;">
+            <p style="color: #666; margin-bottom: 15px; font-size: 16px;">
+              Open any UPI app and scan the QR code above:
+            </p>
+            <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+              <span style="background: #4285f4; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold;">Google Pay</span>
+              <span style="background: #5f259f; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold;">PhonePe</span>
+              <span style="background: #00baf2; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold;">Paytm</span>
+              <span style="background: #ff6b35; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold;">BHIM</span>
             </div>
           </div>
           
-          <!-- Step 2: UPI Payment -->
+          <!-- Alternative UPI ID -->
           <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 12px; border: 2px dashed #28a745;">
-            <h4 style="color: #333; margin-bottom: 15px; text-align: center;">📱 Step 2: UPI Payment</h4>
+            <h4 style="color: #333; margin-bottom: 15px;">💰 Or Pay via UPI ID</h4>
             <div style="text-align: center; margin-bottom: 15px;">
-              <p style="color: #666; margin: 0 0 10px 0;">On the website, you'll get a QR code to scan</p>
-              <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #ddd; display: inline-block;">
-                <p style="color: #00c851; margin: 0; font-size: 24px; font-weight: bold;">₹${productPrice}</p>
+              <p style="color: #666; margin: 0 0 10px 0;">Send ₹${productPrice} to UPI ID:</p>
+              <div style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #ddd; display: inline-block;">
+                <span style="font-family: monospace; font-size: 18px; font-weight: bold; color: #28a745;">${process.env.UPI_ID || 'pianolearn@upi'}</span>
               </div>
             </div>
-            <div style="text-align: center; margin-bottom: 15px;">
-              <p style="color: #666; margin: 0 0 5px 0;">Payment Amount: <strong style="color: #28a745;">₹${productPrice}</strong></p>
-              <p style="color: #666; margin: 0; font-size: 14px;">Reference: ${productTitle.substring(0, 20)}...</p>
-            </div>
-            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
-              <p style="color: #2d5a2d; margin: 0; font-size: 13px; text-align: center;">
-                📱 Scan QR code with Google Pay, PhonePe, Paytm or any UPI app
-              </p>
-            </div>
-          </div>
-          
-          <!-- Step 3: Get Download -->
-          <div style="margin-bottom: 30px; padding: 20px; background: #e8f5e8; border-radius: 12px; border: 2px dashed #28a745;">
-            <h4 style="color: #333; margin-bottom: 15px; text-align: center;">📥 Step 3: Get Your PDF</h4>
-            <div style="text-align: center;">
-              <p style="color: #2d5a2d; margin: 0; font-size: 14px; line-height: 1.6;">
-                After successful UPI payment, click "I've Completed Payment" on the website.<br>
-                Your download link will be sent to <strong>${email}</strong> instantly!
+            <div style="background: #e8f5e8; padding: 15px; border-radius: 10px;">
+              <p style="color: #2d5a2d; margin: 0; font-size: 13px;">
+                📝 <strong>After payment:</strong> Send payment screenshot to support@pianolearn.com with your email (${email}) to get instant download link
               </p>
             </div>
           </div>
           
           <!-- Features -->
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
-            <h4 style="color: #333; margin-bottom: 15px; text-align: center;">What You Get:</h4>
-            <ul style="color: #666; margin: 0; padding-left: 20px; line-height: 1.8;">
-              <li>✅ Instant PDF download after payment</li>
-              <li>✅ High-quality piano learning materials</li>
-              <li>✅ Lifetime access to your purchase</li>
-              <li>✅ 30-day money-back guarantee</li>
-            </ul>
+          <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px;">
+            <h4 style="color: #333; margin-bottom: 20px; font-size: 20px;">🎹 What You Get:</h4>
+            <div style="text-align: left; max-width: 400px; margin: 0 auto;">
+              <div style="display: flex; align-items: center; margin-bottom: 12px; color: #2d5a2d;">
+                <span style="margin-right: 12px; font-size: 18px;">✅</span>
+                <span style="font-size: 16px;">Instant PDF download after payment</span>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 12px; color: #2d5a2d;">
+                <span style="margin-right: 12px; font-size: 18px;">✅</span>
+                <span style="font-size: 16px;">High-quality piano learning materials</span>
+              </div>
+              <div style="display: flex; align-items: center; margin-bottom: 12px; color: #2d5a2d;">
+                <span style="margin-right: 12px; font-size: 18px;">✅</span>
+                <span style="font-size: 16px;">Lifetime access to your purchase</span>
+              </div>
+              <div style="display: flex; align-items: center; color: #2d5a2d;">
+                <span style="margin-right: 12px; font-size: 18px;">✅</span>
+                <span style="font-size: 16px;">30-day money-back guarantee</span>
+              </div>
+            </div>
           </div>
           
           <!-- Security Notice -->
-          <div style="text-align: center; padding: 20px; background: #e8f5e8; border-radius: 12px;">
-            <p style="color: #2d5a2d; margin: 0; font-size: 14px;">
-              🔒 Your payment is secured with 256-bit SSL encryption
+          <div style="text-align: center; padding: 25px; background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); border-radius: 15px;">
+            <p style="color: #2d5a2d; margin: 0; font-size: 16px; font-weight: 600;">
+              🔒 Your payment is secured with UPI's bank-grade security
+            </p>
+            <p style="color: #2d5a2d; margin: 8px 0 0 0; font-size: 14px;">
+              Trusted by millions of users across India
             </p>
           </div>
         </div>
         
         <!-- Footer -->
         <div style="padding: 30px 20px; background: #333; text-align: center;">
-          <p style="color: #ccc; margin: 0; font-size: 14px;">
+          <p style="color: #ccc; margin: 0; font-size: 16px; font-weight: 600;">
             Need help? Contact us at support@pianolearn.com
           </p>
-          <p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">
+          <p style="color: #999; margin: 15px 0 0 0; font-size: 14px;">
             This email was sent because you requested payment options for ${productTitle}
+          </p>
+          <p style="color: #666; margin: 10px 0 0 0; font-size: 12px;">
+            PianoLearn • Making piano learning accessible to everyone
           </p>
         </div>
       </div>
