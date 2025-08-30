@@ -44,7 +44,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ product, onClose }) => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:3001/api/purchase/upi', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/purchase/send-payment-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
