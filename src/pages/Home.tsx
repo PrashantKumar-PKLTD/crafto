@@ -4,13 +4,14 @@ import Categories from '../components/Categories';
 import Features from '../components/Features';
 import PDFPreview from '../components/PDFPreview';
 import Contact from '../components/Contact';
+import PDFSection from '../components/PDFSection';
 
 const Home = () => {
   return (
     <>
       <Hero />
       <Categories />
-      <PDFPreview />
+      <PDFSection />
       <Features />
       <Contact />
     </>
