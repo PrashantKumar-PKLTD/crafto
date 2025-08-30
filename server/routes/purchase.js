@@ -37,10 +37,10 @@ router.post('/send-payment-email', [
     const paymentEmailContent = `
       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background: #f8f9fa;">
         <!-- Header -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">Complete Your Purchase</h1>
+        <div style="background: linear-gradient(135deg, #00c851 0%, #007e33 100%); padding: 40px 20px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🎹 UPI Payment Required</h1>
           <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">
-            Choose your preferred payment method below
+            Use the website to complete your UPI payment
           </p>
         </div>
         
@@ -53,51 +53,62 @@ router.post('/send-payment-email', [
             <div>
               <h2 style="color: #333; margin: 0 0 8px 0; font-size: 20px;">${productTitle}</h2>
               <p style="color: #666; margin: 0 0 8px 0; font-size: 14px;">Digital PDF Download</p>
-              <p style="color: #667eea; margin: 0; font-size: 24px; font-weight: bold;">${productPrice}</p>
+              <p style="color: #00c851; margin: 0; font-size: 24px; font-weight: bold;">₹${productPrice}</p>
             </div>
           </div>
         </div>
         
-        <!-- Payment Methods -->
+        <!-- Payment Instructions -->
         <div style="padding: 40px 20px; background: white;">
-          <h3 style="color: #333; margin-bottom: 25px; text-align: center;">Choose Payment Method</h3>
+          <h3 style="color: #333; margin-bottom: 25px; text-align: center;">📱 UPI Payment Instructions</h3>
           
-          <!-- Razorpay Payment Button -->
-          <div style="margin-bottom: 20px;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                        color: white; padding: 20px; border-radius: 12px; 
-                        text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 15px;">
-              💳 Razorpay Payment Available
-              <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Use the website payment form for instant payment</div>
-            </div>
-          </div>
-          
-          <!-- UPI Payment Button -->
+          <!-- Step 1: Go to Website -->
           <div style="margin-bottom: 30px;">
-            <div style="background: linear-gradient(135deg, #00c851 0%, #007e33 100%); 
+            <div style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); 
                         color: white; padding: 20px; border-radius: 12px; 
                         text-align: center; font-weight: bold; font-size: 16px;">
-              📱 UPI Payment Available
-              <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Use the website payment form for UPI QR code</div>
+              🌐 Step 1: Go to Website
+              <div style="font-size: 14px; opacity: 0.9; margin-top: 8px;">
+                Visit our website and click "Pay with UPI" to get QR code
+              </div>
+              <div style="margin-top: 15px;">
+                <a href="${process.env.CORS_ORIGIN || 'http://localhost:5173'}" 
+                   style="background: rgba(255,255,255,0.2); color: white; padding: 12px 24px; 
+                          text-decoration: none; border-radius: 8px; font-size: 14px; 
+                          display: inline-block; border: 1px solid rgba(255,255,255,0.3);">
+                  🔗 Open PianoLearn Website
+                </a>
+              </div>
             </div>
           </div>
           
-          <!-- Direct UPI ID Payment -->
+          <!-- Step 2: UPI Payment -->
           <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 12px; border: 2px dashed #28a745;">
-            <h4 style="color: #333; margin-bottom: 15px; text-align: center;">💰 Pay Directly via UPI</h4>
+            <h4 style="color: #333; margin-bottom: 15px; text-align: center;">📱 Step 2: UPI Payment</h4>
             <div style="text-align: center; margin-bottom: 15px;">
-              <p style="color: #666; margin: 0 0 10px 0;">Send payment to UPI ID:</p>
+              <p style="color: #666; margin: 0 0 10px 0;">On the website, you'll get a QR code to scan</p>
               <div style="background: white; padding: 12px; border-radius: 8px; border: 1px solid #ddd; display: inline-block;">
-                <p style="color: #667eea; margin: 0; font-size: 24px; font-weight: bold;">₹{productPrice}</p>
+                <p style="color: #00c851; margin: 0; font-size: 24px; font-weight: bold;">₹${productPrice}</p>
               </div>
             </div>
             <div style="text-align: center; margin-bottom: 15px;">
-              <p style="color: #666; margin: 0 0 5px 0;">Amount: <strong style="color: #28a745;">₹${productPrice}</strong></p>
+              <p style="color: #666; margin: 0 0 5px 0;">Payment Amount: <strong style="color: #28a745;">₹${productPrice}</strong></p>
               <p style="color: #666; margin: 0; font-size: 14px;">Reference: ${productTitle.substring(0, 20)}...</p>
             </div>
-            <div style="background: #e8f5e8; padding: 12px; border-radius: 8px;">
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
               <p style="color: #2d5a2d; margin: 0; font-size: 13px; text-align: center;">
-                📝 After payment: Send screenshot to support@pianolearn.com with your email (${email}) to get download link
+                📱 Scan QR code with Google Pay, PhonePe, Paytm or any UPI app
+              </p>
+            </div>
+          </div>
+          
+          <!-- Step 3: Get Download -->
+          <div style="margin-bottom: 30px; padding: 20px; background: #e8f5e8; border-radius: 12px; border: 2px dashed #28a745;">
+            <h4 style="color: #333; margin-bottom: 15px; text-align: center;">📥 Step 3: Get Your PDF</h4>
+            <div style="text-align: center;">
+              <p style="color: #2d5a2d; margin: 0; font-size: 14px; line-height: 1.6;">
+                After successful UPI payment, click "I've Completed Payment" on the website.<br>
+                Your download link will be sent to <strong>${email}</strong> instantly!
               </p>
             </div>
           </div>
