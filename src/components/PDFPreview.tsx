@@ -51,6 +51,15 @@ const PDFPreview: React.FC = () => {
   }
 
   function openPreview(p: PDFProduct) {
+    // Check if the product is free (price is 0 or "Free")
+    const isFree = p.price === 0 || p.price === "0" || p.price === "Free" || p.price === "free";
+    
+    if (!isFree) {
+      // Show payment required message for paid PDFs
+      alert("This PDF requires payment to preview. Please purchase to access the full content.");
+      return;
+    }
+    
     const url = buildPdfUrl(p.preview);
     if (url) window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -290,13 +299,24 @@ const PDFPreview: React.FC = () => {
 
                     {/* Preview overlay button */}
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <button
-                        onClick={() => openPreview(product)}
-                        className="bg-white/95 backdrop-blur-sm text-purple-600 px-4 py-2 rounded-full shadow-xl hover:bg-white hover:scale-110 transition-all duration-300 flex items-center gap-2"
-                      >
-                        <Eye className="w-4 h-4" />
-                        <span className="text-sm font-semibold">Preview</span>
-                      </button>
+                      {(() => {
+                        const isFree = product.price === 0 || product.price === "0" || product.price === "Free" || product.price === "free";
+                        return (
+                          <button
+                            onClick={() => openPreview(product)}
+                            className={`backdrop-blur-sm px-4 py-2 rounded-full shadow-xl hover:scale-110 transition-all duration-300 flex items-center gap-2 ${
+                              isFree 
+                                ? "bg-white/95 text-purple-600 hover:bg-white" 
+                                : "bg-red-500/95 text-white hover:bg-red-600 cursor-not-allowed"
+                            }`}
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span className="text-sm font-semibold">
+                              {isFree ? "Preview" : "Payment Required"}
+                            </span>
+                          </button>
+                        );
+                      })()}
                     </div>
 
                     {/* Pages */}
@@ -346,38 +366,86 @@ const PDFPreview: React.FC = () => {
                     </div>
 
                     {/* Preview link (debug-friendly) */}
-                    <div className="mb-4 p-3 bg-blue-50 rounded-xl break-all">
-                      <a
-                        href={buildPdfUrl(product.preview)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-700 text-sm font-medium underline"
-                      >
-                        Open preview
-                      </a>
-                    </div>
+                    {(() => {
+                      const isFree = product.price === 0 || product.price === "0" || product.price === "Free" || product.price === "free";
+                      return (
+                        <div className={`mb-4 p-3 rounded-xl break-all ${
+                          isFree ? "bg-green-50" : "bg-red-50"
+                        }`}>
+                          {isFree ? (
+                            <a
+                              href={buildPdfUrl(product.preview)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-green-700 text-sm font-medium underline hover:text-green-800"
+                            >
+                              🆓 Open free preview
+                            </a>
+                          ) : (
+                            <div className="text-red-700 text-sm font-medium">
+                              🔒 Preview available after purchase
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Price & action */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-xl md:text-2xl font-bold text-purple-600">
-                          {price}
-                        </span>
-                        {original && (
-                          <span className="text-sm text-gray-500 line-through">
-                            {original}
-                          </span>
-                        )}
+                        {(() => {
+                          const isFree = product.price === 0 || product.price === "0" || product.price === "Free" || product.price === "free";
+                          return (
+                            <>
+                              <span className={`text-xl md:text-2xl font-bold ${
+                                isFree ? "text-green-600" : "text-purple-600"
+                              }`}>
+                                {isFree ? "FREE" : price}
+                              </span>
+                              {!isFree && original && (
+                                <span className="text-sm text-gray-500 line-through">
+                                  {original}
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
-                    >
-                      <ShoppingCart className="w-5 h-5" />
-                      <span>Add to Cart</span>
-                    </button>
+                    {(() => {
+                      const isFree = product.price === 0 || product.price === "0" || product.price === "Free" || product.price === "free";
+                      return (
+                        <button
+                          onClick={() => {
+                            if (isFree) {
+                              // For free PDFs, directly open the preview
+                              openPreview(product);
+                            } else {
+                              // For paid PDFs, show the purchase flow
+                              handleAddToCart(product);
+                            }
+                          }}
+                          className={`w-full font-semibold py-3 rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 ${
+                            isFree
+                              ? "bg-green-600 hover:bg-green-700 text-white"
+                              : "bg-purple-600 hover:bg-purple-700 text-white"
+                          }`}
+                        >
+                          {isFree ? (
+                            <>
+                              <Download className="w-5 h-5" />
+                              <span>Download Free</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingCart className="w-5 h-5" />
+                              <span>Purchase & Download</span>
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               );
@@ -403,8 +471,8 @@ const PDFPreview: React.FC = () => {
                   <ShoppingCart className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold">Add to Cart</h3>
-                  <p className="text-purple-100 text-sm">Enter your email to continue</p>
+                  <h3 className="text-xl font-bold">Purchase Required</h3>
+                  <p className="text-purple-100 text-sm">Enter your email to continue with payment</p>
                 </div>
               </div>
             </div>
@@ -421,9 +489,11 @@ const PDFPreview: React.FC = () => {
                         <span className="text-2xl font-bold text-purple-600">
                           {selectedProduct.price}
                         </span>
-                        <span className="text-sm text-gray-500 line-through">
-                          {selectedProduct.originalPrice}
-                        </span>
+                        {selectedProduct.originalPrice && (
+                          <span className="text-sm text-gray-500 line-through">
+                            {selectedProduct.originalPrice}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
