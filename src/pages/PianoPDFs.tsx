@@ -42,7 +42,7 @@ const PianoPDFs = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/products`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/products`);
       const result = await response.json();
       
       if (result.success) {
