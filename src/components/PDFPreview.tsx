@@ -154,9 +154,6 @@ const PDFPreview: React.FC = () => {
   };
 
   const handleUpiPayment = async () => {
-    const e = arguments[0];
-    if (e && e.preventDefault) e.preventDefault();
-    
     if (!email || !selectedProduct) return;
     setIsSubmitting(true);
     try {
@@ -612,7 +609,7 @@ const PDFPreview: React.FC = () => {
                   <div className="inline-block p-6 bg-white border-2 border-green-200 rounded-2xl shadow-lg">
                     <img 
                       src={upiData.qrCode} 
-                      alt="UPI QR Code" 
+                      alt="UPI QR Code"
                       className="w-56 h-56 mx-auto"
                     />
                   </div>
