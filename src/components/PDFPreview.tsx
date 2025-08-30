@@ -36,8 +36,6 @@ const PDFPreview: React.FC = () => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "upi" | "">("");
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [upiData, setUpiData] = useState<{
     qrCode: string;
@@ -122,8 +120,6 @@ const PDFPreview: React.FC = () => {
     setShowEmailModal(true);
     setEmail("");
     setIsSuccess(false);
-    setShowPaymentOptions(false);
-    setPaymentMethod("");
   };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -146,23 +142,20 @@ const PDFPreview: React.FC = () => {
       const result = await res.json();
       if (result?.success) {
         setIsSuccess(true);
-        setShowPaymentOptions(true);
       } else {
         alert("Failed to send email. Please try again.");
       }
     } catch (err) {
       console.error("Email sending error:", err);
       setIsSuccess(true);
-      setShowPaymentOptions(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handlePurchase = async (method: "razorpay" | "upi") => {
+  const handleUpiPayment = async () => {
     if (!email || !selectedProduct) return;
     setIsSubmitting(true);
-    setPaymentMethod(method);
     try {
       if (!API) throw new Error("VITE_API_BASE_URL missing");
       const res = await fetch(`${API}/purchase/create-intent`, {
@@ -171,81 +164,55 @@ const PDFPreview: React.FC = () => {
         body: JSON.stringify({
           email,
           productId: String(selectedProduct.id),
-          paymentMethod: method,
+          paymentMethod: "upi",
         }),
       });
       const result = await res.json();
       if (!result?.success) throw new Error(result?.message || "Purchase failed");
 
-      if (method === "upi") {
-        // For UPI, show QR code and payment instructions
-        setUpiData({
-          qrCode: result.upiQRCode,
-          upiString: result.upiString,
-          purchaseId: result.purchaseId
-        });
-        setShowUpiModal(true);
-      } else if (method === "razorpay") {
-        // Handle Razorpay payment
-        if (window.Razorpay && result.razorpayOrderId) {
-          const options = {
-            key: result.razorpayKeyId,
-            amount: selectedProduct.price * 100,
-            currency: 'INR',
-            name: 'PianoLearn',
-            description: selectedProduct.title,
-            order_id: result.razorpayOrderId,
-            handler: async (response: any) => {
-              // Confirm payment
-              const confirmRes = await fetch(`${API}/purchase/confirm`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  purchaseId: result.purchaseId,
-                  razorpayPaymentId: response.razorpay_payment_id,
-                  razorpaySignature: response.razorpay_signature,
-                }),
-              });
-              const confirmResult = await confirmRes.json();
-              if (confirmResult?.success) {
-                setIsSuccess(true);
-                setTimeout(() => closeModal(), 2000);
-              }
-            },
-            prefill: {
-              email: email,
-            },
-            theme: {
-              color: '#8b5cf6'
-            }
-          };
-          const rzp = new window.Razorpay(options);
-          rzp.open();
-        } else {
-          // Fallback for demo
-          await new Promise((r) => setTimeout(r, 1200));
-          const confirm = await fetch(`${API}/purchase/confirm`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              purchaseId: result.purchaseId,
-              razorpayPaymentId: "demo_razorpay_" + Date.now(),
-              razorpaySignature: "demo_signature_" + Date.now(),
-            }),
-          });
-          const confirmResult = await confirm.json();
-          if (confirmResult?.success) {
-            setIsSuccess(true);
-            setTimeout(() => closeModal(), 2000);
-          }
-        }
-      }
+      // Show UPI QR code and payment instructions
+      setUpiData({
+        qrCode: result.upiQRCode,
+        upiString: result.upiString,
+        purchaseId: result.purchaseId
+      });
+      setShowUpiModal(true);
+      setShowEmailModal(false);
     } catch (err) {
       console.error("Purchase error:", err);
       alert("Payment failed. Please try again.");
     } finally {
       setIsSubmitting(false);
-      setPaymentMethod("");
+    }
+  };
+
+  const handleUpiConfirmation = async () => {
+    if (!upiData) return;
+    
+    try {
+      setIsSubmitting(true);
+      const confirmRes = await fetch(`${API}/purchase/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          purchaseId: upiData.purchaseId,
+          upiTransactionId: "manual_upi_" + Date.now(),
+        }),
+      });
+      const confirmResult = await confirmRes.json();
+      if (confirmResult?.success) {
+        setIsSuccess(true);
+        setShowUpiModal(false);
+        setShowEmailModal(true);
+        setTimeout(() => closeModal(), 3000);
+      } else {
+        alert("Payment confirmation failed. Please contact support.");
+      }
+    } catch (error) {
+      console.error("Payment confirmation error:", error);
+      alert("Payment confirmation failed. Please contact support.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -255,8 +222,6 @@ const PDFPreview: React.FC = () => {
     setSelectedProduct(null);
     setEmail("");
     setIsSuccess(false);
-    setShowPaymentOptions(false);
-    setPaymentMethod("");
     setUpiData(null);
   };
 
@@ -516,7 +481,7 @@ const PDFPreview: React.FC = () => {
 
             {/* Content */}
             <div className="p-6">
-              {!showPaymentOptions ? (
+              {!isSuccess ? (
                 <>
                   {selectedProduct && (
                     <div className="mb-6 p-4 bg-gray-50 rounded-xl">
@@ -537,7 +502,7 @@ const PDFPreview: React.FC = () => {
 
                   <form onSubmit={handleEmailSubmit}>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
+                      Email Address for Download Link
                     </label>
                     <div className="relative mb-2">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -551,105 +516,34 @@ const PDFPreview: React.FC = () => {
                       />
                     </div>
                     <p className="text-xs text-gray-500 mb-4">
-                      We’ll send your purchase confirmation and download link to this email.
+                      After UPI payment, we'll send your download link to this email.
                     </p>
 
                     <button
                       type="submit"
                       disabled={isSubmitting || !email}
-                      className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                      className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
                     >
                       {isSubmitting ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Sending Email...</span>
+                          <span>Opening UPI Payment...</span>
                         </>
                       ) : (
                         <>
-                          <Mail className="w-5 h-5" />
-                          <span>Send Payment Options</span>
+                          <QrCode className="w-5 h-5" />
+                          <span>Continue to UPI Payment</span>
                         </>
                       )}
                     </button>
                   </form>
 
-                  {isSuccess && (
-                    <div className="mt-4 p-4 bg-green-50 rounded-xl">
-                      <div className="flex items-center gap-2 text-green-600">
-                        <Check className="w-5 h-5" />
-                        <span className="font-medium">Email sent successfully!</span>
-                      </div>
-                      <p className="text-green-700 text-sm mt-1">
-                        Check your inbox for payment options and instructions.
-                      </p>
-                    </div>
-                  )}
-                </>
-              ) : !isSuccess ? (
-                <div className="py-4">
-                  {selectedProduct && (
-                    <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900">{selectedProduct.title}</h4>
-                        <span className="text-2xl font-bold text-purple-600">{selectedProduct.price}</span>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-2">Email: {email}</p>
-                      <p className="text-xs text-green-600">✓ Instant download after payment</p>
-                    </div>
-                  )}
-
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Choose Payment Method</h3>
-
-                  <div className="space-y-3 mb-6">
-                    <button
-                      onClick={() => handlePurchase("razorpay")}
-                      disabled={isSubmitting}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all flex items-center gap-4 disabled:opacity-50"
-                    >
-                      <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center">
-                        <CreditCard className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <h4 className="font-semibold text-gray-900">Razorpay</h4>
-                        <p className="text-sm text-gray-600">Credit/Debit Cards, UPI, Net Banking</p>
-                      </div>
-                      {isSubmitting && paymentMethod === "razorpay" && (
-                        <div className="w-5 h-5 border-2 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => handlePurchase("upi")}
-                      disabled={isSubmitting}
-                      className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition-all flex items-center gap-4 disabled:opacity-50"
-                    >
-                      <div className="w-12 h-12 bg-gradient-to-r from-green-600 to-green-700 rounded-xl flex items-center justify-center">
-                        <CreditCard className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <h4 className="font-semibold text-gray-900">UPI Payment</h4>
-                        <p className="text-sm text-gray-600">Google Pay, PhonePe, Paytm & more</p>
-                      </div>
-                      {isSubmitting && paymentMethod === "upi" && (
-                        <div className="w-5 h-5 border-2 border-green-600/30 border-t-green-600 rounded-full animate-spin" />
-                      )}
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={() => setShowPaymentOptions(false)}
-                    disabled={isSubmitting}
-                    className="w-full py-3 text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
-                  >
-                    ← Send Another Email
-                  </button>
-
                   <div className="mt-4 p-3 bg-green-50 rounded-xl">
                     <p className="text-xs text-green-700 text-center">
-                      🔒 Your payment is secured with 256-bit SSL encryption
+                      🔒 Secure UPI payment • Instant download after payment
                     </p>
                   </div>
-                </div>
+                </>
               ) : (
                 <div className="text-center py-6">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -657,7 +551,7 @@ const PDFPreview: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Purchase Successful!</h3>
                   <p className="text-gray-600 mb-4">
-                    Thank you for your purchase! We’ve sent your download link to <strong>{email}</strong>
+                    Thank you for your UPI payment! We've sent your download link to <strong>{email}</strong>
                   </p>
                   <p className="text-sm text-gray-500 mb-4">
                     Check your inbox for the PDF download link and receipt.
