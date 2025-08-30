@@ -9,6 +9,7 @@ import FreeSongs from './pages/FreeSongs';
 import About from './pages/About';
 import Contact from './components/Contact';
 import Admin from './pages/Admin';
+import PaymentVerification from './components/PaymentVerification';
 
 function App() {
   useEffect(() => {

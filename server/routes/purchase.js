@@ -138,6 +138,26 @@ router.post('/send-payment-email', [
             </div>
           </div>
           
+          <!-- Payment Verification -->
+          <div style="margin-bottom: 30px; padding: 25px; background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%); border-radius: 15px; border: 2px solid #ffc107;">
+            <h4 style="color: #856404; margin-bottom: 20px; text-align: center; font-size: 20px;">⚡ Get Instant Access</h4>
+            <div style="text-align: center;">
+              <p style="color: #856404; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">
+                After completing UPI payment, click the button below:
+              </p>
+              <a href="${process.env.CORS_ORIGIN || 'http://localhost:5173'}/verify-payment?token=${downloadToken}&email=${encodeURIComponent(email)}" 
+                 style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                        color: white; padding: 15px 30px; text-decoration: none; 
+                        border-radius: 12px; font-weight: bold; font-size: 16px;
+                        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
+                ✅ I've Completed Payment - Get Download Link
+              </a>
+              <p style="color: #856404; margin: 15px 0 0 0; font-size: 14px;">
+                This will verify your payment and send you the download link instantly
+              </p>
+            </div>
+          </div>
+          
           <!-- Security Notice -->
           <div style="text-align: center; padding: 25px; background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%); border-radius: 15px;">
             <p style="color: #2d5a2d; margin: 0; font-size: 16px; font-weight: 600;">
