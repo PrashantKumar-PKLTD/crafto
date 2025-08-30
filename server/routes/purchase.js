@@ -342,7 +342,7 @@ router.post('/confirm', [
             <h3 style="color: #333; margin-bottom: 15px;">📋 Purchase Details:</h3>
             <p style="margin: 8px 0;"><strong>Product:</strong> ${updatedPurchase.product_title}</p>
             <p style="margin: 8px 0;"><strong>Price:</strong> ₹${updatedPurchase.price}</p>
-            <p style="margin: 8px 0;"><strong>Payment Method:</strong> ${updatedPurchase.payment_method.toUpperCase()}</p>
+            <p style="margin: 8px 0;"><strong>Payment Method:</strong> UPI</p>
             <p style="margin: 8px 0;"><strong>Purchase Date:</strong> ${new Date(updatedPurchase.created_at).toLocaleDateString()}</p>
           </div>
           

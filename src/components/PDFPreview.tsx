@@ -558,7 +558,7 @@ const PDFPreview: React.FC = () => {
                   </p>
                   <div className="p-3 bg-blue-50 rounded-xl">
                     <p className="text-xs text-blue-700">
-                      💡 Tip: Check your spam folder if you don’t see the email within 5 minutes
+                      💡 Tip: Check your spam folder if you don't see the email within 5 minutes
                     </p>
                   </div>
                 </div>
@@ -571,7 +571,7 @@ const PDFPreview: React.FC = () => {
       {/* UPI Payment Modal */}
       {showUpiModal && upiData && selectedProduct && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in relative">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-scale-in relative max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white relative">
               <button
@@ -582,11 +582,11 @@ const PDFPreview: React.FC = () => {
               </button>
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-white/20 rounded-full">
-                  <CreditCard className="w-6 h-6" />
+                  <QrCode className="w-6 h-6" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">UPI Payment</h3>
-                  <p className="text-green-100 text-sm">Scan QR code or use UPI ID</p>
+                  <p className="text-green-100 text-sm">Scan QR code with any UPI app</p>
                 </div>
               </div>
             </div>
@@ -605,74 +605,119 @@ const PDFPreview: React.FC = () => {
               {/* QR Code */}
               {upiData.qrCode && (
                 <div className="text-center mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Scan QR Code</h4>
-                  <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-xl">
+                  <h4 className="font-semibold text-gray-900 mb-4 text-lg">📱 Scan QR Code to Pay</h4>
+                  <div className="inline-block p-6 bg-white border-2 border-green-200 rounded-2xl shadow-lg">
                     <img 
                       src={upiData.qrCode} 
                       alt="UPI QR Code" 
-                      className="w-48 h-48 mx-auto"
+                      className="w-56 h-56 mx-auto"
                     />
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Scan with any UPI app (Google Pay, PhonePe, Paytm, etc.)
+                  <p className="text-sm text-gray-600 mt-3">
+                    Open any UPI app and scan this QR code
                   </p>
+                  <div className="flex items-center justify-center gap-4 mt-3">
+                    <span className="text-xs text-gray-500">Google Pay</span>
+                    <span className="text-xs text-gray-500">•</span>
+                    <span className="text-xs text-gray-500">PhonePe</span>
+                    <span className="text-xs text-gray-500">•</span>
+                    <span className="text-xs text-gray-500">Paytm</span>
+                    <span className="text-xs text-gray-500">•</span>
+                    <span className="text-xs text-gray-500">BHIM</span>
+                  </div>
                 </div>
               )}
 
-              {/* UPI ID Option */}
-              <div className="mb-6 p-4 bg-green-50 rounded-xl border-2 border-dashed border-green-300">
-                <h4 className="font-semibold text-gray-900 mb-3 text-center">Or Pay via UPI ID</h4>
-                <div className="text-center mb-3">
-                  <div className="inline-block bg-white px-4 py-2 rounded-lg border">
-                    <span className="font-mono text-green-600 font-bold">pianolearn@upi</span>
-                  </div>
-                </div>
-                <div className="text-center mb-3">
-                  <p className="text-sm text-gray-600">Amount: <strong className="text-green-600">₹{selectedProduct.price}</strong></p>
-                  <p className="text-xs text-gray-500">Reference: {selectedProduct.title.substring(0, 20)}...</p>
-                </div>
-                
-                {/* UPI App Buttons */}
-                {upiData.upiString && (
-                  <div className="space-y-2">
-                    <a
-                      href={upiData.upiString}
-                      className="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl text-center transition-all duration-300"
-                    >
-                      📱 Open UPI App
-                    </a>
-                  </div>
-                )}
+              {/* Payment Amount */}
+              <div className="text-center mb-6 p-4 bg-green-50 rounded-xl border border-green-200">
+                <h4 className="font-semibold text-gray-900 mb-2">Payment Amount</h4>
+                <div className="text-3xl font-bold text-green-600 mb-1">₹{selectedProduct.price}</div>
+                <p className="text-sm text-gray-600">for {selectedProduct.title}</p>
               </div>
 
+              {/* Alternative UPI ID */}
+              <div className="mb-6 p-4 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300">
+                <h4 className="font-semibold text-gray-900 mb-3 text-center">💰 Or Pay via UPI ID</h4>
+                <div className="text-center mb-3">
+                  <p className="text-sm text-gray-600 mb-2">Send ₹{selectedProduct.price} to:</p>
+                  <div className="inline-block bg-white px-4 py-3 rounded-lg border border-blue-200">
+                    <span className="font-mono text-blue-600 font-bold text-lg">pianolearn@upi</span>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">Reference: {selectedProduct.title.substring(0, 25)}...</p>
+                </div>
+              </div>
+
+              {/* UPI App Direct Links */}
+              {upiData.upiString && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3 text-center">🚀 Quick Pay</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <a
+                      href={`googlepay://upi/pay?${new URL(upiData.upiString).search.substring(1)}`}
+                      className="flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-300 text-sm font-medium"
+                    >
+                      📱 Google Pay
+                    </a>
+                    <a
+                      href={`phonepe://pay?${new URL(upiData.upiString).search.substring(1)}`}
+                      className="flex items-center justify-center gap-2 p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-all duration-300 text-sm font-medium"
+                    >
+                      📱 PhonePe
+                    </a>
+                    <a
+                      href={`paytmmp://pay?${new URL(upiData.upiString).search.substring(1)}`}
+                      className="flex items-center justify-center gap-2 p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-300 text-sm font-medium"
+                    >
+                      📱 Paytm
+                    </a>
+                    <a
+                      href={upiData.upiString}
+                      className="flex items-center justify-center gap-2 p-3 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all duration-300 text-sm font-medium"
+                    >
+                      📱 Other UPI
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {/* Instructions */}
-              <div className="mb-6 p-4 bg-blue-50 rounded-xl">
-                <h4 className="font-semibold text-gray-900 mb-2">Payment Instructions:</h4>
-                <ol className="text-sm text-gray-700 space-y-1">
-                  <li>1. Complete the UPI payment using QR code or UPI ID</li>
-                  <li>2. Take a screenshot of the payment confirmation</li>
-                  <li>3. Send the screenshot to support@pianolearn.com</li>
-                  <li>4. Include your email ({email}) in the message</li>
-                  <li>5. You'll receive the download link within 24 hours</li>
+              <div className="mb-6 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <span>📋</span>
+                  <span>Payment Steps:</span>
+                </h4>
+                <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
+                  <li>Scan the QR code or click a UPI app button above</li>
+                  <li>Complete the payment of ₹{selectedProduct.price}</li>
+                  <li>Click "I've Completed Payment" below</li>
+                  <li>You'll receive the download link at {email}</li>
                 </ol>
               </div>
 
-              {/* Manual Confirmation Button */}
+              {/* Confirmation Button */}
               <button
-                onClick={() => {
-                  if (confirm("Have you completed the UPI payment? Click OK to confirm.")) {
-                    handlePurchase("upi");
-                  }
-                }}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                onClick={handleUpiConfirmation}
+                disabled={isSubmitting}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Check className="w-5 h-5" />
-                <span>I've Completed Payment</span>
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Confirming Payment...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5" />
+                    <span>I've Completed Payment</span>
+                  </>
+                )}
               </button>
 
-              <div className="mt-4 p-3 bg-yellow-50 rounded-xl">
-                <p className="text-xs text-yellow-700 text-center">
-                  💡 For instant access, use Razorpay payment option above
+              <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-600 text-center">
+                  💡 Having trouble? Send payment screenshot to support@pianolearn.com
                 </p>
               </div>
             </div>
