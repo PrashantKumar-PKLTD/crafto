@@ -463,6 +463,165 @@ router.post('/confirm', [
   }
 });
 
+// Verify UPI payment (automated check)
+router.post('/verify-upi', [
+  body('downloadToken').notEmpty().withMessage('Download token is required'),
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { downloadToken, email } = req.body;
+
+    // Find the purchase
+    const purchase = await Purchase.findOne({
+      download_token: downloadToken,
+      email: email
+    }).populate('product_id');
+
+    if (!purchase) {
+      return res.status(404).json({
+        success: false,
+        message: 'Purchase not found'
+      });
+    }
+
+    // Check if already completed
+    if (purchase.payment_status === 'completed') {
+      const downloadUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/api/purchase/download/${purchase.download_token}`;
+      
+      return res.json({
+        success: true,
+        message: 'Payment already confirmed!',
+        downloadUrl: downloadUrl,
+        productTitle: purchase.product_title
+      });
+    }
+
+    // For demo purposes, we'll mark as pending
+    // In production, you'd integrate with UPI payment gateway to check status
+    res.json({
+      success: false,
+      message: 'Payment verification pending'
+    });
+
+  } catch (error) {
+    console.error('UPI verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Manual payment verification (when user confirms they paid)
+router.post('/manual-verify', [
+  body('downloadToken').notEmpty().withMessage('Download token is required'),
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+
+    const { downloadToken, email } = req.body;
+
+    // Find the purchase
+    const purchase = await Purchase.findOne({
+      download_token: downloadToken,
+      email: email
+    }).populate('product_id');
+
+    if (!purchase) {
+      return res.status(404).json({
+        success: false,
+        message: 'Purchase not found'
+      });
+    }
+
+    // Update purchase status to completed (for demo purposes)
+    // In production, you'd want manual admin verification
+    const updatedPurchase = await Purchase.findByIdAndUpdate(
+      purchase._id,
+      { 
+        payment_status: 'completed',
+        upi_transaction_id: `manual_${Date.now()}`
+      },
+      { new: true }
+    );
+
+    // Generate download URL
+    const downloadUrl = `${process.env.CORS_ORIGIN || 'http://localhost:5173'}/api/purchase/download/${purchase.download_token}`;
+    
+    // Send download email
+    const emailContent = `
+      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 40px 20px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Payment Confirmed!</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">
+            Your PDF is ready for download
+          </p>
+        </div>
+        
+        <div style="padding: 40px 20px; background: white;">
+          <div style="text-align: center; margin: 30px 0;">
+            <h3 style="color: #333; margin-bottom: 20px; font-size: 24px;">${purchase.product_title}</h3>
+            <a href="${downloadUrl}" 
+               style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                      color: white; padding: 20px 40px; text-decoration: none; 
+                      border-radius: 12px; font-weight: bold; font-size: 18px;
+                      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
+              📥 Download Your PDF Now
+            </a>
+          </div>
+          
+          <div style="background: #e8f5e8; padding: 20px; border-radius: 12px;">
+            <p style="color: #2d5a2d; margin: 0; text-align: center; font-size: 14px;">
+              💡 This download link will be active for 30 days. Save the PDF to your device for offline access.
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    sendEmail(
+      email,
+      `🎹 Download Ready: ${purchase.product_title}`,
+      emailContent
+    );
+
+    // Update product download count
+    await Product.findByIdAndUpdate(
+      purchase.product_id,
+      { $inc: { downloads: 1 } }
+    );
+
+    res.json({
+      success: true,
+      message: 'Payment confirmed! Download link sent to your email.',
+      downloadUrl: downloadUrl,
+      productTitle: purchase.product_title
+    });
+
+  } catch (error) {
+    console.error('Manual verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Get purchase history for user
 router.get('/history/:email', async (req, res) => {
   try {
