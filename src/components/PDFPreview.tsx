@@ -154,6 +154,9 @@ const PDFPreview: React.FC = () => {
   };
 
   const handleUpiPayment = async () => {
+    const e = arguments[0];
+    if (e && e.preventDefault) e.preventDefault();
+    
     if (!email || !selectedProduct) return;
     setIsSubmitting(true);
     try {
