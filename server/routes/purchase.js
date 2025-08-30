@@ -64,24 +64,22 @@ router.post('/send-payment-email', [
           
           <!-- Razorpay Payment Button -->
           <div style="margin-bottom: 20px;">
-            <a href="${process.env.CORS_ORIGIN || 'http://localhost:5173'}?payment=razorpay&product=${productId}&email=${encodeURIComponent(email)}" 
-               style="display: block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                      color: white; padding: 20px; text-decoration: none; border-radius: 12px; 
-                      text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 15px;">
-              💳 Pay with Razorpay
-              <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Credit/Debit Cards, UPI, Net Banking</div>
-            </a>
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        color: white; padding: 20px; border-radius: 12px; 
+                        text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 15px;">
+              💳 Razorpay Payment Available
+              <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Use the website payment form for instant payment</div>
+            </div>
           </div>
           
           <!-- UPI Payment Button -->
           <div style="margin-bottom: 30px;">
-            <a href="${process.env.CORS_ORIGIN || 'http://localhost:5173'}?payment=upi&product=${productId}&email=${encodeURIComponent(email)}" 
-               style="display: block; background: linear-gradient(135deg, #00c851 0%, #007e33 100%); 
-                      color: white; padding: 20px; text-decoration: none; border-radius: 12px; 
-                      text-align: center; font-weight: bold; font-size: 16px;">
-              📱 Pay with UPI
-              <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Google Pay, PhonePe, Paytm & more</div>
-            </a>
+            <div style="background: linear-gradient(135deg, #00c851 0%, #007e33 100%); 
+                        color: white; padding: 20px; border-radius: 12px; 
+                        text-align: center; font-weight: bold; font-size: 16px;">
+              📱 UPI Payment Available
+              <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">Use the website payment form for UPI QR code</div>
+            </div>
           </div>
           
           <!-- Direct UPI ID Payment -->

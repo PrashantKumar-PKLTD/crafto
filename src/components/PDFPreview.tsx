@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   Check,
   CreditCard,
+  QrCode,
 } from "lucide-react";
 
 interface PDFProduct {
@@ -37,6 +38,12 @@ const PDFPreview: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "upi" | "">("");
+  const [showUpiModal, setShowUpiModal] = useState(false);
+  const [upiData, setUpiData] = useState<{
+    qrCode: string;
+    upiString: string;
+    purchaseId: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -170,57 +177,87 @@ const PDFPreview: React.FC = () => {
       const result = await res.json();
       if (!result?.success) throw new Error(result?.message || "Purchase failed");
 
-      // Simulate payment + confirm
-      await new Promise((r) => setTimeout(r, 1200));
-      const confirm = await fetch(`${API}/purchase/confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          method === "razorpay"
-            ? {
-                purchaseId: result.purchaseId,
-                razorpayPaymentId: "demo_razorpay_" + Date.now(),
-                razorpaySignature: "demo_signature_" + Date.now(),
+      if (method === "upi") {
+        // For UPI, show QR code and payment instructions
+        setUpiData({
+          qrCode: result.upiQRCode,
+          upiString: result.upiString,
+          purchaseId: result.purchaseId
+        });
+        setShowUpiModal(true);
+      } else if (method === "razorpay") {
+        // Handle Razorpay payment
+        if (window.Razorpay && result.razorpayOrderId) {
+          const options = {
+            key: result.razorpayKeyId,
+            amount: selectedProduct.price * 100,
+            currency: 'INR',
+            name: 'PianoLearn',
+            description: selectedProduct.title,
+            order_id: result.razorpayOrderId,
+            handler: async (response: any) => {
+              // Confirm payment
+              const confirmRes = await fetch(`${API}/purchase/confirm`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  purchaseId: result.purchaseId,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                }),
+              });
+              const confirmResult = await confirmRes.json();
+              if (confirmResult?.success) {
+                setIsSuccess(true);
+                setTimeout(() => closeModal(), 2000);
               }
-            : {
-                purchaseId: result.purchaseId,
-                upiTransactionId: "demo_upi_" + Date.now(),
-              }
-        ),
-      });
-      const confirmResult = await confirm.json();
-      if (confirmResult?.success) {
-        setIsSuccess(true);
-        setTimeout(() => {
-          setShowEmailModal(false);
-          setSelectedProduct(null);
-          setIsSuccess(false);
-          setShowPaymentOptions(false);
-          setPaymentMethod("");
-        }, 2000);
+            },
+            prefill: {
+              email: email,
+            },
+            theme: {
+              color: '#8b5cf6'
+            }
+          };
+          const rzp = new window.Razorpay(options);
+          rzp.open();
+        } else {
+          // Fallback for demo
+          await new Promise((r) => setTimeout(r, 1200));
+          const confirm = await fetch(`${API}/purchase/confirm`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              purchaseId: result.purchaseId,
+              razorpayPaymentId: "demo_razorpay_" + Date.now(),
+              razorpaySignature: "demo_signature_" + Date.now(),
+            }),
+          });
+          const confirmResult = await confirm.json();
+          if (confirmResult?.success) {
+            setIsSuccess(true);
+            setTimeout(() => closeModal(), 2000);
+          }
+        }
       }
     } catch (err) {
       console.error("Purchase error:", err);
-      setIsSuccess(true);
-      setTimeout(() => {
-        setShowEmailModal(false);
-        setSelectedProduct(null);
-        setIsSuccess(false);
-        setShowPaymentOptions(false);
-        setPaymentMethod("");
-      }, 2000);
+      alert("Payment failed. Please try again.");
     } finally {
       setIsSubmitting(false);
+      setPaymentMethod("");
     }
   };
 
   const closeModal = () => {
     setShowEmailModal(false);
+    setShowUpiModal(false);
     setSelectedProduct(null);
     setEmail("");
     setIsSuccess(false);
     setShowPaymentOptions(false);
     setPaymentMethod("");
+    setUpiData(null);
   };
 
   return (
@@ -632,6 +669,118 @@ const PDFPreview: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPI Payment Modal */}
+      {showUpiModal && upiData && selectedProduct && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in relative">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white relative">
+              <button
+                onClick={closeModal}
+                className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-white/20 rounded-full">
+                  <CreditCard className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">UPI Payment</h3>
+                  <p className="text-green-100 text-sm">Scan QR code or use UPI ID</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Product Info */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+                <h4 className="font-semibold text-gray-900 mb-1">{selectedProduct.title}</h4>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-green-600">₹{selectedProduct.price}</span>
+                  <span className="text-sm text-gray-600">to {email}</span>
+                </div>
+              </div>
+
+              {/* QR Code */}
+              {upiData.qrCode && (
+                <div className="text-center mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Scan QR Code</h4>
+                  <div className="inline-block p-4 bg-white border-2 border-gray-200 rounded-xl">
+                    <img 
+                      src={upiData.qrCode} 
+                      alt="UPI QR Code" 
+                      className="w-48 h-48 mx-auto"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Scan with any UPI app (Google Pay, PhonePe, Paytm, etc.)
+                  </p>
+                </div>
+              )}
+
+              {/* UPI ID Option */}
+              <div className="mb-6 p-4 bg-green-50 rounded-xl border-2 border-dashed border-green-300">
+                <h4 className="font-semibold text-gray-900 mb-3 text-center">Or Pay via UPI ID</h4>
+                <div className="text-center mb-3">
+                  <div className="inline-block bg-white px-4 py-2 rounded-lg border">
+                    <span className="font-mono text-green-600 font-bold">pianolearn@upi</span>
+                  </div>
+                </div>
+                <div className="text-center mb-3">
+                  <p className="text-sm text-gray-600">Amount: <strong className="text-green-600">₹{selectedProduct.price}</strong></p>
+                  <p className="text-xs text-gray-500">Reference: {selectedProduct.title.substring(0, 20)}...</p>
+                </div>
+                
+                {/* UPI App Buttons */}
+                {upiData.upiString && (
+                  <div className="space-y-2">
+                    <a
+                      href={upiData.upiString}
+                      className="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl text-center transition-all duration-300"
+                    >
+                      📱 Open UPI App
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Instructions */}
+              <div className="mb-6 p-4 bg-blue-50 rounded-xl">
+                <h4 className="font-semibold text-gray-900 mb-2">Payment Instructions:</h4>
+                <ol className="text-sm text-gray-700 space-y-1">
+                  <li>1. Complete the UPI payment using QR code or UPI ID</li>
+                  <li>2. Take a screenshot of the payment confirmation</li>
+                  <li>3. Send the screenshot to support@pianolearn.com</li>
+                  <li>4. Include your email ({email}) in the message</li>
+                  <li>5. You'll receive the download link within 24 hours</li>
+                </ol>
+              </div>
+
+              {/* Manual Confirmation Button */}
+              <button
+                onClick={() => {
+                  if (confirm("Have you completed the UPI payment? Click OK to confirm.")) {
+                    handlePurchase("upi");
+                  }
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+              >
+                <Check className="w-5 h-5" />
+                <span>I've Completed Payment</span>
+              </button>
+
+              <div className="mt-4 p-3 bg-yellow-50 rounded-xl">
+                <p className="text-xs text-yellow-700 text-center">
+                  💡 For instant access, use Razorpay payment option above
+                </p>
+              </div>
             </div>
           </div>
         </div>
